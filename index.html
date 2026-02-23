@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- CSS  -->
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet" />
+  <title>ALTERNATV</title>
+  <link rel="icon" type="image/x-icon" href="favicon.png">
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="https://alternatv.ar" class="logo-switch" aria-label="ALTERNATV">
+        <img id="site-logo-a" class="logo-switch__img is-active" src="logoalternatv.png" alt="ALTERNATV">
+        <img id="site-logo-b" class="logo-switch__img" src="logoalternatv2.png" alt="ALTERNATV">
+      </a>
+
+      <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-controls="site-nav" aria-expanded="false">
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+      </button>
+
+      <nav id="site-nav" class="site-nav" aria-label="Navegación principal">
+        <a class="nav-link" href="index.html">Inicio</a>
+        <a class="nav-link" href="quienes.html">Quiénes somos</a>
+        <a class="nav-link" href="tv.html">Ver en la TV</a>
+        <a class="nav-link" href="cel.html">Ver en el celular</a>
+        <a class="nav-link" href="archivo.html">On‑Demand</a>
+        <a class="nav-link" href="noticias.html">Noticias</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page" id="contenido">
+    <section class="hero" aria-label="Transmisión en vivo">
+      <div class="hero-grid">
+        <div class="live">
+          <div class="live-header">
+            <div class="live-badge" aria-label="En vivo">EN VIVO</div>
+            <div class="live-title">AlternaTV · Streaming</div>
+          </div>
+
+          <div class="player-shell">
+            <video id="alternatv" class="video-js vjs-default-skin" controls playsinline preload="auto">
+              <source type="application/x-mpegURL" src="./stream/hls/live.m3u8">
+            </video>
+          </div>
+
+          <p class="live-sub">La transmisión arranca automáticamente al entrar. Si no se reproduce, tocá Play.</p>
+        </div>
+
+        <aside class="side" aria-label="Accesos rápidos">
+          <a class="promo" href="archivo.html">
+            <div class="promo-title">On‑Demand</div>
+            <div class="promo-text">Mirá programas y especiales archivados.</div>
+          </a>
+
+          <a class="promo" href="noticias.html">
+            <div class="promo-title">Noticias</div>
+            <div class="promo-text">Actualidad y cobertura.</div>
+          </a>
+
+          <a class="promo promo--radio" href="https://alternaradio.ar">
+            <div class="promo-title">AlternaRadio</div>
+            <div class="promo-text">Escuchá la radio en vivo.</div>
+          </a>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" aria-label="Archivo destacado">
+      <div class="section-head">
+        <h1 class="section-title">Archivo · destacados</h1>
+        <a class="section-link" href="archivo.html">Ver todo</a>
+      </div>
+
+      <div class="grid">
+        <a class="card" href="archivo.html">
+          <img class="card-media" src="nootherland.png" alt="No Other Land">
+          <div class="card-body">
+            <div class="card-title">No Other Land</div>
+            <div class="card-meta">Especial · On‑Demand</div>
+          </div>
+        </a>
+
+        <a class="card" href="archivo.html">
+          <img class="card-media" src="alternatvbanner.png" alt="Programas y especiales">
+          <div class="card-body">
+            <div class="card-title">Programas y especiales</div>
+            <div class="card-meta">Archivo completo</div>
+          </div>
+        </a>
+
+        <a class="card" href="noticias.html">
+          <img class="card-media" src="alternatv.png" alt="Noticias">
+          <div class="card-body">
+            <div class="card-title">Noticias</div>
+            <div class="card-meta">Últimas publicaciones</div>
+          </div>
+        </a>
+
+        <a class="card" href="tv.html">
+          <img class="card-media" src="alternatvbanner.png" alt="Ver en la TV">
+          <div class="card-body">
+            <div class="card-title">Ver en la TV</div>
+            <div class="card-meta">Smart TV · Chromecast · HDMI</div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <footer class="footer" aria-label="Pie de página">
+      <a class="footer-link" href="https://alternaradio.ar">AlternaRadio</a>
+      <span class="footer-sep">·</span>
+      <a class="footer-link" href="quienes.html">Contacto</a>
+    </footer>
+  </main>
+
+  <!-- JS code -->
+  <script src="https://vjs.zencdn.net/ie8/ie8-version/videojs-ie8.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/5.14.1/videojs-contrib-hls.js"></script>
+  <script src="https://vjs.zencdn.net/7.2.3/video.js"></script>
+
+  <script src="app.js"></script>
+</body>
+</html>

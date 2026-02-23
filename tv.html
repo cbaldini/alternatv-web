@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <title>ALTERNATV · Ver en la TV</title>
+  <link rel="icon" type="image/x-icon" href="favicon.png">
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="logo-switch" aria-label="ALTERNATV">
+        <img id="site-logo-a" class="logo-switch__img is-active" src="logoalternatv.png" alt="ALTERNATV">
+        <img id="site-logo-b" class="logo-switch__img" src="logoalternatv2.png" alt="ALTERNATV">
+      </a>
+
+      <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-controls="site-nav" aria-expanded="false">
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+      </button>
+
+      <nav id="site-nav" class="site-nav" aria-label="Navegación principal">
+        <a class="nav-link" href="index.html">Inicio</a>
+        <a class="nav-link" href="quienes.html">Quiénes somos</a>
+        <a class="nav-link" href="tv.html">Ver en la TV</a>
+        <a class="nav-link" href="cel.html">Ver en el celular</a>
+        <a class="nav-link" href="archivo.html">On‑Demand</a>
+        <a class="nav-link" href="noticias.html">Noticias</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="section" aria-label="Ver en la TV">
+      <div class="section-head">
+        <h1 class="section-title">Ver en la TV</h1>
+        <a class="section-link" href="index.html">Volver al vivo</a>
+      </div>
+
+      <div class="prose">
+        <p>
+          Desde cualquier Smart TV podés instalarte un reproductor de canales IPTV como <strong>SS IPTV</strong> (gratuito) u <strong>OTT-Player</strong> y cargar una lista donde esté AlternaTV.
+        </p>
+        <p>
+          En el proyecto <a class="text-link" href="https://github.com/iptv-org/" target="_blank" rel="noopener">iptv-org</a> encontrás listas ordenadas por lenguaje, país y categoría.
+          Por ejemplo, los canales de Argentina están en
+          <a class="text-link" href="https://iptv-org.github.io/iptv/countries/ar.m3u" target="_blank" rel="noopener">https://iptv-org.github.io/iptv/countries/ar.m3u</a>.
+        </p>
+        <p>
+          Los canales en español: <a class="text-link" href="https://iptv-org.github.io/iptv/languages/spa.m3u" target="_blank" rel="noopener">spa.m3u</a>.
+          Todo el mundo: <a class="text-link" href="https://iptv-org.github.io/iptv/index.m3u" target="_blank" rel="noopener">index.m3u</a>.
+        </p>
+
+        <div class="contact-row">
+          <a class="pill" href="https://1-ss--iptv-com.translate.goog/en/users/documents/how-to-upload-playlist?_x_tr_enc=1&_x_tr_sl=auto&_x_tr_tl=es&_x_tr_hl=es-419&_x_tr_pto=wapp" target="_blank" rel="noopener">Guía SS IPTV (ES)</a>
+          <a class="pill" href="https://ss-iptv.com/en/users/documents/how-to-upload-playlist" target="_blank" rel="noopener">Guía SS IPTV (EN)</a>
+        </div>
+
+        <p style="margin-top: 14px;">
+          En Android TV o celular, también podés usar <strong>VLC</strong> y pegar directamente el link del stream:
+          <a class="text-link" href="https://alternatv.ar/stream/hls/live.m3u8" target="_blank" rel="noopener">https://alternatv.ar/stream/hls/live.m3u8</a>.
+        </p>
+      </div>
+
+      <img class="hero-image" src="https://asistentegoogle.com/wp-content/uploads/2022/02/c-users-john-caceres-pictures-aa-a215-jpg.jpeg" alt="Smart TV" />
+    </section>
+
+    <footer class="footer" aria-label="Pie de página">
+      <a class="footer-link" href="https://alternaradio.ar">AlternaRadio</a>
+      <span class="footer-sep">·</span>
+      <a class="footer-link" href="index.html">Inicio</a>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
