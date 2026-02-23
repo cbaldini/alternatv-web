@@ -98,12 +98,32 @@
     // Autoplay live (solo si existe el player)
     if (window.videojs && document.getElementById('alternatv')) {
       try {
-        var options = { autoplay: true, muted: false };
-        var player = window.videojs('alternatv', options);
+        var player = window.videojs('alternatv', {
+          autoplay: 'muted',
+          muted: true,
+          controls: true,
+          preload: 'auto',
+          fluid: true,
+          techOrder: ['html5']
+        });
+
+        // Manejo de errores
+        player.on('error', function () {
+          var error = player.error();
+          if (error) {
+            console.error('Error de video:', error.code, error.message);
+          }
+        });
+
+        // Intentar reproducir
         var playPromise = player.play();
-        if (playPromise && playPromise.catch) playPromise.catch(function () {});
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(function (err) {
+            console.log('Autoplay bloqueado:', err);
+          });
+        }
       } catch (e) {
-        // noop
+        console.error('Error al inicializar reproductor:', e);
       }
     }
   });
