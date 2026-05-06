@@ -15,6 +15,67 @@ function showCastStatus(msg, color) {
   diag.textContent = msg;
 }
 
+function addUniversalCastButton(player, video, container, streamUrl) {
+  // Crear botón Cast
+  var bar = container.querySelector('.shaka-controls-container .shaka-control-bar');
+  if (!bar || bar.querySelector('.universal-cast-btn')) return;
+  var btn = document.createElement('button');
+  btn.className = 'universal-cast-btn';
+  btn.title = 'Enviar a TV (Chromecast)';
+  btn.setAttribute('aria-label', 'Enviar a TV (Chromecast)');
+  btn.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm18-7H5v1.63c3.96 1.28 7.09 4.41 8.37 8.37H19V7zM1 10v2c4.97 0 9 4.03 9 9h2c0-6.08-4.93-11-11-11zm20-7H3C1.9 3 1 3.9 1 5v3h2V5h18v14h-7v2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" fill="currentColor"/></svg>';
+  btn.style.display = 'inline-flex';
+  btn.style.alignItems = 'center';
+  btn.style.justifyContent = 'center';
+  btn.style.background = 'none';
+  btn.style.border = 'none';
+  btn.style.cursor = 'pointer';
+  btn.style.color = '#fff';
+  btn.style.fontSize = '1.2em';
+  btn.style.marginLeft = '8px';
+  btn.style.transition = 'color 0.2s';
+  bar.appendChild(btn);
+
+  // Estado visual
+  function setActive(active) {
+    btn.style.color = active ? '#4fc3f7' : '#fff';
+  }
+
+  // Click: abrir diálogo Cast y enviar stream
+  btn.addEventListener('click', function () {
+    if (window.cast && window.cast.framework) {
+      var ctx = cast.framework.CastContext.getInstance();
+      ctx.requestSession().then(function () {
+        var session = ctx.getCurrentSession();
+        if (!session) return;
+        var mediaInfo = new chrome.cast.media.MediaInfo(streamUrl, 'application/x-mpegURL');
+        mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+        var meta = new chrome.cast.media.GenericMediaMetadata();
+        meta.title = 'AlternaTV · En vivo';
+        meta.images = [{ url: 'https://tv.alterna.ar/logoalternatv.png' }];
+        mediaInfo.metadata = meta;
+        var req = new chrome.cast.media.LoadRequest(mediaInfo);
+        req.autoplay = true;
+        session.loadMedia(req).then(function () {
+          setActive(true);
+          if (player) player.pause && player.pause();
+        });
+      });
+    } else {
+      alert('No se detectó el SDK de Google Cast. Usá Chrome o Chromium.');
+    }
+  });
+
+  // Cambiar color si hay sesión activa
+  if (window.cast && window.cast.framework) {
+    var ctx = cast.framework.CastContext.getInstance();
+    ctx.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, function (e) {
+      setActive(e.sessionState === cast.framework.SessionState.SESSION_STARTED || e.sessionState === cast.framework.SessionState.SESSION_RESUMED);
+      if (e.sessionState === cast.framework.SessionState.SESSION_ENDED && player) player.play && player.play();
+    });
+  }
+}
+
 function initShakaPlayer() {
   if (!window.shaka) {
     alert('No se pudo cargar el reproductor de video.');
@@ -47,9 +108,8 @@ function initShakaPlayer() {
       addBigPlayButton: true,
       controlPanelElements: [
         'play_pause', 'time_and_duration', 'mute', 'volume', 'spacer',
-        'cast', 'fullscreen', 'overflow_menu'
+        'fullscreen', 'overflow_menu' // quitamos 'cast' nativo
       ],
-      castReceiverAppId: 'CC1AD845',
       seekBarColors: {
         base: 'rgba(255,255,255,0.2)',
         buffered: 'rgba(255,255,255,0.4)',
@@ -60,13 +120,16 @@ function initShakaPlayer() {
     ui = container.querySelector('.shaka-controls-container');
   }
 
-  // Diagnóstico Cast: esperar a que la UI esté lista
+  // Inyectar botón Cast universal SIEMPRE visible
   setTimeout(function() {
-    var castBtn = container.querySelector('.shaka-cast-button');
-    if (castBtn && castBtn.offsetParent !== null) {
-      showCastStatus('✅ Dispositivo Chromecast disponible. El botón de Cast está visible.', '#4fc3f7');
-    } else {
-      showCastStatus('ℹ️ No se detectaron dispositivos Chromecast en la red. El botón aparecerá automáticamente si hay dispositivos disponibles.', '#ffb300');
+    addUniversalCastButton(player, video, container, manifestUri);
+  }, 1000);
+
+  // Diagnóstico Cast (opcional)
+  setTimeout(function() {
+    var castBtn = container.querySelector('.universal-cast-btn');
+    if (castBtn) {
+      castBtn.title = 'Enviar a TV (Chromecast)';
     }
   }, 2000);
 

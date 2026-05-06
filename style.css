@@ -790,3 +790,28 @@ body.nav-open {
   color: #4fc3f7;
   opacity: 1;
 }
+
+.universal-cast-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.8em;
+  height: 2.8em;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2em;
+  margin-left: 8px;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: color 0.2s, opacity 0.2s;
+}
+.universal-cast-btn:hover {
+  opacity: 1;
+  color: #4fc3f7;
+}
+.universal-cast-btn[aria-pressed="true"],
+.universal-cast-btn.active {
+  color: #4fc3f7;
+  opacity: 1;
+}
