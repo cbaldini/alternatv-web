@@ -9,11 +9,8 @@ function initShakaPlayer() {
   var video = document.getElementById('shaka-player');
   var container = document.getElementById('shaka-player-container');
 
-  // Forzar controles nativos y autoplay
-  video.setAttribute('controls', '');
-  video.setAttribute('autoplay', '');
-  video.setAttribute('playsinline', '');
-  video.setAttribute('muted', '');
+  // Quitar controles nativos si los hubiera
+  video.removeAttribute('controls');
 
   // Inicializar Shaka Player (nuevo método)
   shaka.polyfill.installAll();
@@ -26,23 +23,24 @@ function initShakaPlayer() {
   var player = new shaka.Player();
   player.attach(video);
 
-  var ui = new shaka.ui.Overlay(player, container, video);
-  var controls = ui.getControls();
-
-  // Configuración de la UI
-  ui.configure({
-    addBigPlayButton: true,
-    controlPanelElements: [
-      'play_pause', 'time_and_duration', 'mute', 'volume', 'spacer',
-      'cast', 'fullscreen', 'overflow_menu'
-    ],
-    castReceiverAppId: 'CC1AD845', // Default Media Receiver
-    seekBarColors: {
-      base: 'rgba(255,255,255,0.2)',
-      buffered: 'rgba(255,255,255,0.4)',
-      played: '#d20000'
-    }
-  });
+  // Solo una instancia de UI Overlay
+  if (!container.classList.contains('shaka-initialized')) {
+    var ui = new shaka.ui.Overlay(player, container, video);
+    container.classList.add('shaka-initialized');
+    ui.configure({
+      addBigPlayButton: true,
+      controlPanelElements: [
+        'play_pause', 'time_and_duration', 'mute', 'volume', 'spacer',
+        'cast', 'fullscreen', 'overflow_menu'
+      ],
+      castReceiverAppId: 'CC1AD845',
+      seekBarColors: {
+        base: 'rgba(255,255,255,0.2)',
+        buffered: 'rgba(255,255,255,0.4)',
+        played: '#d20000'
+      }
+    });
+  }
 
   // Cargar el stream
   player.load(manifestUri).then(function() {
