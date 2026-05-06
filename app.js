@@ -127,76 +127,81 @@
           console.log('[Player] Autoplay bloqueado:', err);
         });
       }
-    }
 
-    // ── Botón de Cast (funciona en desktop y mobile) ────────────────────────
-    var castBtn = document.getElementById('cast-btn');
+      // --- Botón Cast dentro de la barra de controles ---
+      function createCastControl(player) {
+        var bar = player && player.controlBar && player.controlBar.el && player.controlBar.el();
+        if (!bar) return null;
+        var btn = document.createElement('button');
+        btn.className = 'vjs-cast-control vjs-control vjs-button';
+        btn.type = 'button';
+        btn.title = 'Enviar a TV';
+        btn.setAttribute('aria-label', 'Enviar a TV');
+        btn.style.display = 'none';
+        btn.innerHTML =
+          '<span class="vjs-icon-placeholder" aria-hidden="true">' +
+          '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm18-7H5v1.63c3.96 1.28 7.09 4.41 8.37 8.37H19V7zM1 10v2c4.97 0 9 4.03 9 9h2c0-6.08-4.93-11-11-11zm20-7H3C1.9 3 1 3.9 1 5v3h2V5h18v14h-7v2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"></path></svg>' +
+          '</span>';
+        bar.appendChild(btn);
+        return btn;
+      }
 
-    if (castBtn) {
-      castBtn.addEventListener('click', function () {
-
-        // --- Opción 1: Cast Framework v3 (Chrome Desktop, HTTPS) ---
-        if (window.cast && window.cast.framework) {
-          try {
-            var ctx = cast.framework.CastContext.getInstance();
-            ctx.requestSession()
-              .then(function () {
-                var session = ctx.getCurrentSession();
-                if (!session) return;
-
-                var mediaInfo = new chrome.cast.media.MediaInfo(STREAM_URL, 'application/x-mpegURL');
-                mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-
-                var meta = new chrome.cast.media.GenericMediaMetadata();
-                meta.title = 'AlternaTV · En vivo';
-                meta.images = [{ url: 'https://tv.alterna.ar/logoalternatv.png' }];
-                mediaInfo.metadata = meta;
-
-                var req = new chrome.cast.media.LoadRequest(mediaInfo);
-                req.autoplay = true;
-
-                session.loadMedia(req)
-                  .then(function () {
-                    console.log('[Cast] Stream enviado al Chromecast');
-                    if (vjsPlayer && !vjsPlayer.paused()) vjsPlayer.pause();
-                    castBtn.classList.add('cast-btn--active');
-                  })
-                  .catch(function (err) { console.error('[Cast] Error loadMedia:', err); });
-              })
-              .catch(function (err) { console.warn('[Cast] requestSession cancelado:', err); });
-            return; // no seguir al fallback
-          } catch (e) {
-            console.warn('[Cast] Cast Framework error:', e);
-          }
-        }
-
-        // --- Opción 2: Remote Playback API (Chrome Mobile / Android) ---
+      var castBtn = createCastControl(vjsPlayer);
+      function setCastVisible(visible) {
+        if (castBtn) castBtn.style.display = visible ? 'inline-flex' : 'none';
+      }
+      function castWithFramework() {
+        if (!(window.cast && window.cast.framework)) return Promise.reject(new Error('Cast framework unavailable'));
+        var ctx = cast.framework.CastContext.getInstance();
+        return ctx.requestSession().then(function () {
+          var session = ctx.getCurrentSession();
+          if (!session) throw new Error('No active cast session');
+          var mediaInfo = new chrome.cast.media.MediaInfo(STREAM_URL, 'application/x-mpegURL');
+          mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+          var req = new chrome.cast.media.LoadRequest(mediaInfo);
+          req.autoplay = true;
+          return session.loadMedia(req).then(function () {
+            if (vjsPlayer && !vjsPlayer.paused()) vjsPlayer.pause();
+            if (castBtn) castBtn.classList.add('vjs-cast-control--active');
+          });
+        });
+      }
+      function castWithRemotePlayback() {
         var videoEl = document.getElementById('alternatv');
         if (videoEl && videoEl.remote && typeof videoEl.remote.prompt === 'function') {
-          videoEl.remote.prompt()
-            .then(function () { console.log('[RemotePlayback] Conectado'); })
-            .catch(function (err) { console.warn('[RemotePlayback] Cancelado:', err); });
-          return;
+          return videoEl.remote.prompt();
         }
-
-        // --- Fallback: aviso al usuario ---
-        alert('Para enviar a la TV, usá el ícono de Cast en la barra de Chrome (⋮ → Transmitir).');
-      });
-
-      // Escuchar desconexión de sesión Cast para reanudar player local
+        return Promise.reject(new Error('Remote playback unavailable'));
+      }
+      if (castBtn) {
+        castBtn.addEventListener('click', function () {
+          castWithFramework()
+            .catch(function () { return castWithRemotePlayback(); })
+            .catch(function () {
+              alert('No se encontraron dispositivos para compartir en este momento.');
+            });
+        });
+      }
+      // Cast SDK (desktop)
       window.__castReady = function (isAvailable) {
-        if (!isAvailable || !window.cast || !window.cast.framework) return;
+        if (!isAvailable || !(window.cast && window.cast.framework)) return;
+        setCastVisible(true);
         var ctx = cast.framework.CastContext.getInstance();
-        ctx.addEventListener(
-          cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-          function (e) {
-            if (e.sessionState === cast.framework.SessionState.SESSION_ENDED) {
-              castBtn.classList.remove('cast-btn--active');
-              if (vjsPlayer) vjsPlayer.play();
-            }
+        ctx.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, function (e) {
+          if (e.sessionState === cast.framework.SessionState.SESSION_ENDED) {
+            if (castBtn) castBtn.classList.remove('vjs-cast-control--active');
+            if (vjsPlayer) vjsPlayer.play();
           }
-        );
+        });
       };
+      // Remote Playback (mobile)
+      (function () {
+        var videoEl = document.getElementById('alternatv');
+        if (!videoEl || !videoEl.remote || typeof videoEl.remote.watchAvailability !== 'function') return;
+        videoEl.remote.watchAvailability(function (available) {
+          setCastVisible(!!available);
+        }).catch(function () {});
+      })();
     }
   });
 })();

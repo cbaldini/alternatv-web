@@ -763,3 +763,30 @@ body.nav-open {
 /* Compat con páginas viejas (si aún usan #navegador) */
 #navegador ul,
 #navegador li { list-style: none; margin: 0; padding: 0; }
+
+.vjs-control-bar .vjs-cast-control {
+  width: 3em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: none;
+  border: none;
+  box-shadow: none;
+  font-size: 1.2em;
+  opacity: 0.85;
+  transition: opacity 0.2s, color 0.2s;
+}
+.vjs-control-bar .vjs-cast-control .vjs-icon-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.vjs-control-bar .vjs-cast-control:hover {
+  color: #fff;
+  opacity: 1;
+}
+.vjs-control-bar .vjs-cast-control--active {
+  color: #4fc3f7;
+  opacity: 1;
+}
