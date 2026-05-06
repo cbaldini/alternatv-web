@@ -816,3 +816,29 @@ body.nav-open {
   color: #4fc3f7;
   opacity: 1;
 }
+
+#floating-cast-btn {
+  position: absolute !important;
+  top: 12px;
+  right: 12px;
+  z-index: 100;
+  background: rgba(0,0,0,0.85);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  opacity: 0.98;
+  transition: color 0.2s, opacity 0.2s, background 0.2s;
+  font-size: 1.3em;
+}
+#floating-cast-btn:hover {
+  opacity: 1;
+  background: #222;
+  color: #4fc3f7;
+}

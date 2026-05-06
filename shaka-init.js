@@ -72,6 +72,56 @@ function addUniversalCastButton(player, video, container, streamUrl, retries) {
   }
 }
 
+function injectFloatingCastButton(streamUrl) {
+  var container = document.getElementById('shaka-player-container');
+  if (!container || document.getElementById('floating-cast-btn')) return;
+  var btn = document.createElement('button');
+  btn.id = 'floating-cast-btn';
+  btn.title = 'Enviar a TV (Chromecast)';
+  btn.setAttribute('aria-label', 'Enviar a TV (Chromecast)');
+  btn.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm18-7H5v1.63c3.96 1.28 7.09 4.41 8.37 8.37H19V7zM1 10v2c4.97 0 9 4.03 9 9h2c0-6.08-4.93-11-11-11zm20-7H3C1.9 3 1 3.9 1 5v3h2V5h18v14h-7v2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" fill="currentColor"/></svg>';
+  btn.style.position = 'absolute';
+  btn.style.top = '12px';
+  btn.style.right = '12px';
+  btn.style.zIndex = '100';
+  btn.style.background = 'rgba(0,0,0,0.7)';
+  btn.style.border = 'none';
+  btn.style.borderRadius = '50%';
+  btn.style.width = '44px';
+  btn.style.height = '44px';
+  btn.style.display = 'flex';
+  btn.style.alignItems = 'center';
+  btn.style.justifyContent = 'center';
+  btn.style.color = '#fff';
+  btn.style.cursor = 'pointer';
+  btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.4)';
+  btn.style.opacity = '0.95';
+  btn.style.transition = 'color 0.2s, opacity 0.2s';
+  container.style.position = 'relative';
+  container.appendChild(btn);
+
+  btn.addEventListener('click', function () {
+    if (window.cast && window.cast.framework) {
+      var ctx = cast.framework.CastContext.getInstance();
+      ctx.requestSession().then(function () {
+        var session = ctx.getCurrentSession();
+        if (!session) return;
+        var mediaInfo = new chrome.cast.media.MediaInfo(streamUrl, 'application/x-mpegURL');
+        mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+        var meta = new chrome.cast.media.GenericMediaMetadata();
+        meta.title = 'AlternaTV · En vivo';
+        meta.images = [{ url: 'https://tv.alterna.ar/logoalternatv.png' }];
+        mediaInfo.metadata = meta;
+        var req = new chrome.cast.media.LoadRequest(mediaInfo);
+        req.autoplay = true;
+        session.loadMedia(req);
+      });
+    } else {
+      alert('No se detectó el SDK de Google Cast. Usá Chrome o Chromium.');
+    }
+  });
+}
+
 function initShakaPlayer() {
   if (!window.shaka) {
     alert('No se pudo cargar el reproductor de video.');
@@ -118,6 +168,9 @@ function initShakaPlayer() {
 
   // Inyectar botón Cast universal SIEMPRE visible
   addUniversalCastButton(player, video, container, manifestUri, 0);
+
+  // Inyectar botón Cast flotante arriba a la derecha del reproductor
+  injectFloatingCastButton(manifestUri);
 
   // Diagnóstico Cast (opcional)
   setTimeout(function() {
