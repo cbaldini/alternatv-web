@@ -46,7 +46,7 @@
           </div>
 
           <div class="player-shell">
-            <video id="alternatv" class="video-js vjs-default-skin" controls playsinline preload="auto">
+            <video id="alternatv" class="video-js vjs-default-skin" controls playsinline preload="auto" crossorigin="anonymous">
               <source type="application/x-mpegURL" src="./stream/hls/live.m3u8">
             </video>
           </div>
@@ -121,19 +121,18 @@
     </footer>
   </main>
 
-  <!-- Google Cast SDK (debe cargarse antes del init del player) -->
+  <!-- Google Cast SDK — debe definirse ANTES de cargar cast_sender.js -->
   <script>
     window['__onGCastApiAvailable'] = function(isAvailable) {
-      if (isAvailable && window.__castReady) window.__castReady();
+      console.log('[Cast] API disponible:', isAvailable);
+      if (window.__castReady) window.__castReady();
     };
   </script>
-  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+  <!-- cast_sender.js carga el SDK v2 y v3 (Cast Framework) automáticamente -->
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" defer></script>
 
-  <!-- JS code -->
-  <script src="https://vjs.zencdn.net/ie8/ie8-version/videojs-ie8.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/5.14.1/videojs-contrib-hls.js"></script>
-  <script src="https://vjs.zencdn.net/7.2.3/video.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.10/hls.min.js"></script>
+  <!-- Video.js y ChromeCast plugin -->
+  <script src="https://vjs.zencdn.net/8.3.0/video.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@silvermine/videojs-chromecast@2.2.2/dist/silvermine-videojs-chromecast.min.js"></script>
 
   <script src="app.js"></script>

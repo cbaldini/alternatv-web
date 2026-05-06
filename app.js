@@ -95,54 +95,128 @@
       }
     }
 
-    // Autoplay live (solo si existe el player)
-    if (window.videojs && document.getElementById('alternatv')) {
+    // ── Player ─────────────────────────────────────────────────────────────
+    var vjsPlayer = null;
+    var playerReady = false;
+
+    function initPlayer() {
+      if (playerReady) return;
+      if (!window.videojs || !document.getElementById('alternatv')) return;
+      playerReady = true;
+
       try {
-        // Registrar el plugin de Chromecast si está disponible
-        if (window.videojsChromecast) {
+        // Registrar tech de Chromecast (UMD lo expone en window.videojsChromecast)
+        if (typeof window.videojsChromecast === 'function') {
           window.videojsChromecast(window.videojs);
         }
 
-        var castOptions = {
-          // Default Media Receiver (no requiere registro propio)
-          // Para usar un receiver personalizado, reemplazar por tu App ID
-          receiverAppID: 'CC1AD845'
-        };
-
-        var options = {
+        vjsPlayer = window.videojs('alternatv', {
           autoplay: true,
           muted: false,
+          playsinline: true,
+          responsive: true,
+          fluid: true,
+
+          // 'chromecast' tech primero; si no hay Cast disponible cae a html5
           techOrder: ['chromecast', 'html5'],
-          plugins: {
-            chromecast: castOptions
+
+          // VHS (sucesor de hls en Video.js 7+/8+)
+          vhs: {
+            enableLowInitialPlaylist: true,
+            smoothQualityChange: true,
+            overrideNative: true,
+            allowSeeksWithinUnsafeLiveWindow: true
           },
+          // Compatibilidad con configuración legacy html5.hls
+          html5: {
+            vhs: {
+              enableLowInitialPlaylist: true,
+              smoothQualityChange: true,
+              overrideNative: true
+            },
+            hls: {
+              enableLowInitialPlaylist: true,
+              overrideNative: true
+            }
+          },
+
+          // Opciones del plugin de Chromecast
+          chromecast: {
+            receiverAppID: 'CC1AD845',   // Default Media Receiver (sin registro)
+            isCustomReceiver: false,
+            receiverDisplayName: 'AlternaTV'
+          },
+
+          // Mostrar siempre el botón de Cast en la barra de controles
           controlBar: {
-            children: [
-              'playToggle',
-              'volumePanel',
-              'currentTimeDisplay',
-              'timeDivider',
-              'durationDisplay',
-              'progressControl',
-              'liveDisplay',
-              'customControlSpacer',
-              'chromecastButton',
-              'fullscreenToggle'
-            ]
+            chromecastButton: true
           }
-        };
+        });
 
-        var player = window.videojs('alternatv', options);
-        var playPromise = player.play();
-        if (playPromise && playPromise.catch) playPromise.catch(function () {});
+        // Configurar Cast Framework v3 (Chromecast con Google TV y nuevos)
+        vjsPlayer.on('ready', function () {
+          try {
+            if (window.cast && window.cast.framework) {
+              var ctx = cast.framework.CastContext.getInstance();
+              ctx.setOptions({
+                receiverApplicationId: 'CC1AD845',
+                autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+                resumeSavedSession: false
+              });
+            }
+          } catch (castErr) {
+            // Cast Framework v3 no disponible, continúa con SDK v2
+          }
+        });
 
-        // Exponer para que __onGCastApiAvailable pueda re-inicializar si llega tarde
-        window.__castReady = function () {
-          // El SDK ya está cargado, el plugin lo detecta automáticamente
-        };
+        // Metadatos para el receptor Cast (aparece en TV y en la notificación)
+        vjsPlayer.on('play', function () {
+          try {
+            if (window.cast && window.cast.framework) {
+              var session = cast.framework.CastContext.getInstance().getCurrentSession();
+              if (session) {
+                var mediaInfo = new chrome.cast.media.MediaInfo(
+                  window.location.origin + '/stream/hls/live.m3u8',
+                  'application/x-mpegURL'
+                );
+                var meta = new chrome.cast.media.TvShowMediaMetadata();
+                meta.title = 'AlternaTV';
+                meta.subtitle = 'En vivo';
+                meta.images = [{ url: window.location.origin + '/logoalternatv.png' }];
+                mediaInfo.metadata = meta;
+                mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+
+                var req = new chrome.cast.media.LoadRequest(mediaInfo);
+                session.loadMedia(req).catch(function () {});
+              }
+            }
+          } catch (e) {}
+        });
+
+        vjsPlayer.on('error', function () {
+          console.error('Error en el player:', vjsPlayer.error());
+        });
+
+        var playPromise = vjsPlayer.play();
+        if (playPromise && playPromise.catch) {
+          playPromise.catch(function (err) {
+            console.log('Autoplay bloqueado:', err);
+          });
+        }
+
       } catch (e) {
-        // noop
+        console.error('Error inicializando player:', e);
       }
     }
+
+    // Inicializar el player ahora (sin Cast) y también cuando el SDK responda
+    initPlayer();
+
+    // El callback en index.html llamará a esta función cuando Cast esté listo
+    window.__castReady = function () {
+      if (!playerReady) {
+        initPlayer();
+      }
+    };
   });
 })();
