@@ -96,7 +96,7 @@
     }
 
     // ── Player ─────────────────────────────────────────────────────────────
-    var STREAM_URL = window.location.origin + '/stream/hls/live.m3u8';
+    var STREAM_URL = 'https://tv.alterna.ar/stream/hls/live.m3u8';
     var vjsPlayer = null;
 
     if (window.videojs && document.getElementById('alternatv')) {
@@ -129,101 +129,74 @@
       }
     }
 
-    // ── Remote Playback API (Chrome Mobile / Android) ──────────────────────
-    // En mobile, google-cast-launcher no funciona. Usamos la Remote Playback API
-    // que Chrome Mobile sí soporta y muestra el diálogo de selección de dispositivos.
-    (function () {
-      var videoEl = document.getElementById('alternatv');
-      var btn = document.getElementById('cast-btn-manual');
-      if (!videoEl || !btn) return;
+    // ── Botón de Cast (funciona en desktop y mobile) ────────────────────────
+    var castBtn = document.getElementById('cast-btn');
 
-      // Verificar soporte de Remote Playback API
-      if (
-        typeof videoEl.remote !== 'undefined' &&
-        typeof videoEl.remote.watchAvailability === 'function'
-      ) {
-        // Mostrar el botón solo cuando hay dispositivos disponibles
-        videoEl.remote.watchAvailability(function (available) {
-          btn.style.display = available ? 'inline-flex' : 'none';
-          console.log('[RemotePlayback] Dispositivos disponibles:', available);
-        }).catch(function () {
-          // watchAvailability no disponible en este contexto (ej. HTTP sin HTTPS)
-          // Mostramos el botón igual para que el usuario pueda intentarlo
-          btn.style.display = 'inline-flex';
-        });
+    if (castBtn) {
+      castBtn.addEventListener('click', function () {
 
-        btn.addEventListener('click', function () {
-          videoEl.remote.prompt()
-            .then(function () {
-              console.log('[RemotePlayback] Conectado al dispositivo remoto');
-            })
-            .catch(function (err) {
-              console.warn('[RemotePlayback] Cancelado o error:', err);
-            });
-        });
+        // --- Opción 1: Cast Framework v3 (Chrome Desktop, HTTPS) ---
+        if (window.cast && window.cast.framework) {
+          try {
+            var ctx = cast.framework.CastContext.getInstance();
+            ctx.requestSession()
+              .then(function () {
+                var session = ctx.getCurrentSession();
+                if (!session) return;
 
-        // Sincronizar estado del player local con el dispositivo remoto
-        videoEl.remote.addEventListener('connecting', function () {
-          console.log('[RemotePlayback] Conectando...');
-        });
-        videoEl.remote.addEventListener('connect', function () {
-          console.log('[RemotePlayback] Reproduciendo en dispositivo remoto');
-        });
-        videoEl.remote.addEventListener('disconnect', function () {
-          console.log('[RemotePlayback] Desconectado — reanudando local');
-          if (vjsPlayer) vjsPlayer.play();
-        });
-      }
-    })();
+                var mediaInfo = new chrome.cast.media.MediaInfo(STREAM_URL, 'application/x-mpegURL');
+                mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
 
-    // ── Chromecast Desktop (Cast Framework API v3 nativa) ──────────────────
-    window.__castReady = function (isAvailable) {
-      if (!isAvailable) return;
-      console.log('[Cast] Framework listo');
+                var meta = new chrome.cast.media.GenericMediaMetadata();
+                meta.title = 'AlternaTV · En vivo';
+                meta.images = [{ url: 'https://tv.alterna.ar/logoalternatv.png' }];
+                mediaInfo.metadata = meta;
 
-      var ctx = cast.framework.CastContext.getInstance();
+                var req = new chrome.cast.media.LoadRequest(mediaInfo);
+                req.autoplay = true;
 
-      // Escuchar cambios de estado de sesión
-      ctx.addEventListener(
-        cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-        function (e) {
-          var state = e.sessionState;
-          console.log('[Cast] Estado de sesión:', state);
-
-          if (
-            state === cast.framework.SessionState.SESSION_STARTED ||
-            state === cast.framework.SessionState.SESSION_RESUMED
-          ) {
-            // Pausar el player local
-            if (vjsPlayer && !vjsPlayer.paused()) vjsPlayer.pause();
-
-            // Cargar el stream HLS en el Chromecast
-            var session = ctx.getCurrentSession();
-            if (!session) return;
-
-            var mediaInfo = new chrome.cast.media.MediaInfo(STREAM_URL, 'application/x-mpegURL');
-            mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
-
-            var meta = new chrome.cast.media.GenericMediaMetadata();
-            meta.title = 'AlternaTV · En vivo';
-            meta.images = [{ url: window.location.origin + '/logoalternatv.png' }];
-            mediaInfo.metadata = meta;
-
-            var req = new chrome.cast.media.LoadRequest(mediaInfo);
-            req.autoplay = true;
-
-            session.loadMedia(req)
-              .then(function () { console.log('[Cast] Stream enviado al Chromecast'); })
-              .catch(function (err) { console.error('[Cast] Error al cargar en Chromecast:', err); });
-          }
-
-          if (state === cast.framework.SessionState.SESSION_ENDED) {
-            // Reanudar el player local cuando se desconecta
-            console.log('[Cast] Sesión terminada — reanudando player local');
-            if (vjsPlayer) vjsPlayer.play();
+                session.loadMedia(req)
+                  .then(function () {
+                    console.log('[Cast] Stream enviado al Chromecast');
+                    if (vjsPlayer && !vjsPlayer.paused()) vjsPlayer.pause();
+                    castBtn.classList.add('cast-btn--active');
+                  })
+                  .catch(function (err) { console.error('[Cast] Error loadMedia:', err); });
+              })
+              .catch(function (err) { console.warn('[Cast] requestSession cancelado:', err); });
+            return; // no seguir al fallback
+          } catch (e) {
+            console.warn('[Cast] Cast Framework error:', e);
           }
         }
-      );
-    };
+
+        // --- Opción 2: Remote Playback API (Chrome Mobile / Android) ---
+        var videoEl = document.getElementById('alternatv');
+        if (videoEl && videoEl.remote && typeof videoEl.remote.prompt === 'function') {
+          videoEl.remote.prompt()
+            .then(function () { console.log('[RemotePlayback] Conectado'); })
+            .catch(function (err) { console.warn('[RemotePlayback] Cancelado:', err); });
+          return;
+        }
+
+        // --- Fallback: aviso al usuario ---
+        alert('Para enviar a la TV, usá el ícono de Cast en la barra de Chrome (⋮ → Transmitir).');
+      });
+
+      // Escuchar desconexión de sesión Cast para reanudar player local
+      window.__castReady = function (isAvailable) {
+        if (!isAvailable || !window.cast || !window.cast.framework) return;
+        var ctx = cast.framework.CastContext.getInstance();
+        ctx.addEventListener(
+          cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+          function (e) {
+            if (e.sessionState === cast.framework.SessionState.SESSION_ENDED) {
+              castBtn.classList.remove('cast-btn--active');
+              if (vjsPlayer) vjsPlayer.play();
+            }
+          }
+        );
+      };
+    }
   });
 })();

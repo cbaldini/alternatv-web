@@ -280,6 +280,31 @@ a { color: inherit; text-decoration: none; }
   gap: 6px;
 }
 
+.cast-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: rgba(0,0,0,0.45);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.cast-btn:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.7);
+}
+
+.cast-btn--active {
+  background: rgba(255,255,255,0.2);
+  opacity: 1;
+}
+
 google-cast-launcher {
   display: inline-block;
   width: 32px;
