@@ -6,9 +6,9 @@
   <!-- CSS  -->
   <link href="style.css" rel="stylesheet" type="text/css" />
   <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/@silvermine/videojs-chromecast@3.1.0/dist/silvermine-videojs-chromecast.min.css" rel="stylesheet" />
   <title>ALTERNATV</title>
   <link rel="icon" type="image/x-icon" href="favicon.png">
+
 </head>
 
 <body>
@@ -49,6 +49,9 @@
             <video id="alternatv" class="video-js vjs-default-skin" controls playsinline preload="auto" crossorigin="anonymous">
               <source type="application/x-mpegURL" src="./stream/hls/live.m3u8">
             </video>
+            <div class="cast-btn-wrap" id="cast-btn-wrap" style="display:none">
+              <google-cast-launcher></google-cast-launcher>
+            </div>
           </div>
 
           <p class="live-sub">La transmisión arranca automáticamente al entrar. Si no se reproduce, tocá Play.</p>
@@ -125,17 +128,25 @@
   <script>
     window['__onGCastApiAvailable'] = function(isAvailable) {
       console.log('[Cast] SDK disponible:', isAvailable);
-      window.__castApiAvailable = isAvailable;
+      if (isAvailable) {
+        // Inicializar el contexto de Cast con el Default Media Receiver
+        cast.framework.CastContext.getInstance().setOptions({
+          receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+        });
+        // Mostrar el botón nativo
+        var wrap = document.getElementById('cast-btn-wrap');
+        if (wrap) wrap.style.display = 'flex';
+      }
       if (window.__castReady) window.__castReady(isAvailable);
     };
   </script>
 
-  <!-- 2. Cast SDK — SIN defer para que esté disponible cuando app.js corre -->
+  <!-- 2. Cast SDK con Framework v3 (soporta Chromecast viejo y nuevo) -->
   <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
-  <!-- 3. Video.js 8 + plugin Chromecast compatible con VJS 8 -->
+  <!-- 3. Video.js (sin plugin de chromecast de terceros) -->
   <script src="https://vjs.zencdn.net/8.3.0/video.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@silvermine/videojs-chromecast@3.1.0/dist/silvermine-videojs-chromecast.min.js"></script>
 
   <!-- 4. App -->
   <script src="app.js"></script>

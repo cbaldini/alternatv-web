@@ -96,82 +96,87 @@
     }
 
     // ── Player ─────────────────────────────────────────────────────────────
+    var STREAM_URL = window.location.origin + '/stream/hls/live.m3u8';
     var vjsPlayer = null;
-    var playerReady = false;
-    var castInitTimeout = null;
 
-    function initPlayer() {
-      if (playerReady) return;
-      playerReady = true;
-      clearTimeout(castInitTimeout);
-
-      if (!window.videojs || !document.getElementById('alternatv')) return;
-
-      try {
-        // Registrar el tech de Chromecast ANTES de crear el player
-        if (typeof window.videojsChromecast === 'function') {
-          window.videojsChromecast(window.videojs);
-          console.log('[Cast] Plugin de Chromecast registrado');
-        } else {
-          console.warn('[Cast] Plugin de Chromecast NO encontrado');
-        }
-
-        vjsPlayer = window.videojs('alternatv', {
-          autoplay: true,
-          muted: false,
-          playsinline: true,
-          responsive: true,
-          fluid: true,
-          techOrder: ['chromecast', 'html5'],
+    if (window.videojs && document.getElementById('alternatv')) {
+      vjsPlayer = window.videojs('alternatv', {
+        autoplay: true,
+        muted: false,
+        playsinline: true,
+        responsive: true,
+        fluid: true,
+        techOrder: ['html5'],
+        html5: {
           vhs: {
             enableLowInitialPlaylist: true,
             smoothQualityChange: true,
             overrideNative: true,
             allowSeeksWithinUnsafeLiveWindow: true
-          },
-          html5: {
-            vhs: { enableLowInitialPlaylist: true, smoothQualityChange: true, overrideNative: true },
-            hls: { enableLowInitialPlaylist: true, overrideNative: true }
-          },
-          chromecast: {
-            receiverAppID: 'CC1AD845',
-            isCustomReceiver: false,
-            receiverDisplayName: 'AlternaTV'
-          },
-          controlBar: {
-            chromecastButton: true
           }
-        });
-
-        vjsPlayer.on('error', function () {
-          console.error('[Player] Error:', vjsPlayer.error());
-        });
-
-        var playPromise = vjsPlayer.play();
-        if (playPromise && playPromise.catch) {
-          playPromise.catch(function (err) {
-            console.log('[Player] Autoplay bloqueado:', err);
-          });
         }
+      });
 
-      } catch (e) {
-        console.error('[Player] Error inicializando:', e);
+      vjsPlayer.on('error', function () {
+        console.error('[Player] Error:', vjsPlayer.error());
+      });
+
+      var playPromise = vjsPlayer.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(function (err) {
+          console.log('[Player] Autoplay bloqueado:', err);
+        });
       }
     }
 
-    // Callback que llama el SDK de Cast cuando está listo
+    // ── Chromecast (Cast Framework API v3 nativa) ───────────────────────────
     window.__castReady = function (isAvailable) {
-      console.log('[Cast] __castReady, isAvailable:', isAvailable);
-      initPlayer();
-    };
+      if (!isAvailable) return;
+      console.log('[Cast] Framework listo');
 
-    // Fallback: si el SDK no responde en 2 s (browser sin Cast o bloqueado),
-    // iniciar igual el player sin Chromecast
-    castInitTimeout = setTimeout(function () {
-      if (!playerReady) {
-        console.log('[Cast] Timeout — iniciando player sin Cast');
-        initPlayer();
-      }
-    }, 2000);
+      var ctx = cast.framework.CastContext.getInstance();
+
+      // Escuchar cambios de estado de sesión
+      ctx.addEventListener(
+        cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+        function (e) {
+          var state = e.sessionState;
+          console.log('[Cast] Estado de sesión:', state);
+
+          if (
+            state === cast.framework.SessionState.SESSION_STARTED ||
+            state === cast.framework.SessionState.SESSION_RESUMED
+          ) {
+            // Pausar el player local
+            if (vjsPlayer && !vjsPlayer.paused()) vjsPlayer.pause();
+
+            // Cargar el stream HLS en el Chromecast
+            var session = ctx.getCurrentSession();
+            if (!session) return;
+
+            var mediaInfo = new chrome.cast.media.MediaInfo(STREAM_URL, 'application/x-mpegURL');
+            mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
+
+            var meta = new chrome.cast.media.GenericMediaMetadata();
+            meta.title = 'AlternaTV · En vivo';
+            meta.images = [{ url: window.location.origin + '/logoalternatv.png' }];
+            mediaInfo.metadata = meta;
+
+            var req = new chrome.cast.media.LoadRequest(mediaInfo);
+            req.autoplay = true;
+
+            session.loadMedia(req)
+              .then(function () { console.log('[Cast] Stream enviado al Chromecast'); })
+              .catch(function (err) { console.error('[Cast] Error al cargar en Chromecast:', err); });
+          }
+
+          if (state === cast.framework.SessionState.SESSION_ENDED) {
+            // Reanudar el player local cuando se desconecta
+            console.log('[Cast] Sesión terminada — reanudando player local');
+            if (vjsPlayer) vjsPlayer.play();
+          }
+        }
+      );
+    };
   });
 })();

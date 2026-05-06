@@ -10,7 +10,7 @@
 <body style="background-color:black; background-image: url('R.png'); background-size: 25%;">
 
 <div id="navegador">
-<a href="https://alternatv.ar"><img src="alternaradio.png" width="10%" height="10%" alt="ALTERNATV"></a>
+<a href="https://tv.alterna.ar"><img src="alternaradio.png" width="10%" height="10%" alt="ALTERNATV"></a>
 <ul>
 <li><a href="quienes.html">Quienes somos?</a></li>
 <li><a href="tv.html">Ver en la TV</a></li>
@@ -22,8 +22,8 @@
 <div style="text-align: left;">
 <!-- HTML -->
     <audio controls> 
-      <source src="http://alternatv.ar:8000/alternaradio" type="audio/mpeg"> 
-      Your browser does not support HTML5 audio. 
+      <source src="http://tv.alterna.ar:8000/alternaradio" type="audio/mpeg">
+      Your browser does not support HTML5 audio.
     </audio> 
 </div>
 <script type="text/javascript" src="https://counter3.optistats.ovh/private/counter.js?c=rsmews79t4jr2wrkppxh5uf7qq25mfay&down=async" async></script>
