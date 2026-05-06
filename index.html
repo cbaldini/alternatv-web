@@ -6,7 +6,7 @@
   <!-- CSS  -->
   <link href="style.css" rel="stylesheet" type="text/css" />
   <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/@silvermine/videojs-chromecast@2.2.2/dist/silvermine-videojs-chromecast.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@silvermine/videojs-chromecast@3.1.0/dist/silvermine-videojs-chromecast.min.css" rel="stylesheet" />
   <title>ALTERNATV</title>
   <link rel="icon" type="image/x-icon" href="favicon.png">
 </head>
@@ -121,20 +121,23 @@
     </footer>
   </main>
 
-  <!-- Google Cast SDK — debe definirse ANTES de cargar cast_sender.js -->
+  <!-- 1. Definir callback ANTES de cargar el SDK (obligatorio) -->
   <script>
     window['__onGCastApiAvailable'] = function(isAvailable) {
-      console.log('[Cast] API disponible:', isAvailable);
-      if (window.__castReady) window.__castReady();
+      console.log('[Cast] SDK disponible:', isAvailable);
+      window.__castApiAvailable = isAvailable;
+      if (window.__castReady) window.__castReady(isAvailable);
     };
   </script>
-  <!-- cast_sender.js carga el SDK v2 y v3 (Cast Framework) automáticamente -->
-  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" defer></script>
 
-  <!-- Video.js y ChromeCast plugin -->
+  <!-- 2. Cast SDK — SIN defer para que esté disponible cuando app.js corre -->
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+
+  <!-- 3. Video.js 8 + plugin Chromecast compatible con VJS 8 -->
   <script src="https://vjs.zencdn.net/8.3.0/video.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@silvermine/videojs-chromecast@2.2.2/dist/silvermine-videojs-chromecast.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@silvermine/videojs-chromecast@3.1.0/dist/silvermine-videojs-chromecast.min.js"></script>
 
+  <!-- 4. App -->
   <script src="app.js"></script>
 </body>
 </html>
