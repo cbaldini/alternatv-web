@@ -2,22 +2,34 @@
 
 function initShakaPlayer() {
   if (!window.shaka) {
-    console.error('Shaka Player no cargado');
+    alert('No se pudo cargar el reproductor de video.');
     return;
   }
   var manifestUri = 'https://tv.alterna.ar/stream/hls/live.m3u8';
   var video = document.getElementById('shaka-player');
   var container = document.getElementById('shaka-player-container');
 
-  // Configuración de la UI
-  var ui = new shaka.ui.Overlay(
-    new shaka.Player(video),
-    container,
-    video
-  );
+  // Forzar controles nativos y autoplay
+  video.setAttribute('controls', '');
+  video.setAttribute('autoplay', '');
+  video.setAttribute('playsinline', '');
+  video.setAttribute('muted', '');
+
+  // Inicializar Shaka Player (nuevo método)
+  shaka.polyfill.installAll();
+  if (!shaka.Player.isBrowserSupported()) {
+    alert('Tu navegador no soporta video streaming moderno.');
+    return;
+  }
+
+  // Crear el player y la UI Overlay
+  var player = new shaka.Player();
+  player.attach(video);
+
+  var ui = new shaka.ui.Overlay(player, container, video);
   var controls = ui.getControls();
 
-  // Opciones de la UI: mostrar botón de Cast
+  // Configuración de la UI
   ui.configure({
     addBigPlayButton: true,
     controlPanelElements: [
@@ -32,18 +44,14 @@ function initShakaPlayer() {
     }
   });
 
-  // Inicializar Shaka Player
-  shaka.polyfill.installAll();
-  if (!shaka.Player.isBrowserSupported()) {
-    alert('Tu navegador no soporta video streaming moderno.');
-    return;
-  }
-
   // Cargar el stream
-  ui.getPlayer().load(manifestUri).catch(function(error) {
+  player.load(manifestUri).then(function() {
+    video.style.background = 'black';
+  }).catch(function(error) {
+    video.style.background = '#300';
+    alert('No se pudo cargar el stream en vivo.\n\nVerificá tu conexión o intentá más tarde.');
     console.error('Error cargando el stream:', error);
   });
 }
 
 document.addEventListener('DOMContentLoaded', initShakaPlayer);
-
