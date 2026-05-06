@@ -127,7 +127,8 @@ function initShakaPlayer() {
     alert('No se pudo cargar el reproductor de video.');
     return;
   }
-  var manifestUri = './stream/hls/live.m3u8';
+  // Usar URL absoluta para el manifest HLS
+  var manifestUri = '/stream/hls/live.m3u8';
   var video = document.getElementById('shaka-player');
   var container = document.getElementById('shaka-player-container');
 
