@@ -15,25 +15,21 @@ function showCastStatus(msg, color) {
   diag.textContent = msg;
 }
 
-function addUniversalCastButton(player, video, container, streamUrl) {
-  // Crear botón Cast
+function addUniversalCastButton(player, video, container, streamUrl, retries) {
   var bar = container.querySelector('.shaka-controls-container .shaka-control-bar');
-  if (!bar || bar.querySelector('.universal-cast-btn')) return;
+  if (!bar) {
+    // Si la barra no está lista, reintentar hasta 10 veces
+    if ((retries || 0) < 10) setTimeout(function() {
+      addUniversalCastButton(player, video, container, streamUrl, (retries || 0) + 1);
+    }, 300);
+    return;
+  }
+  if (bar.querySelector('.universal-cast-btn')) return;
   var btn = document.createElement('button');
   btn.className = 'universal-cast-btn';
   btn.title = 'Enviar a TV (Chromecast)';
   btn.setAttribute('aria-label', 'Enviar a TV (Chromecast)');
   btn.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm18-7H5v1.63c3.96 1.28 7.09 4.41 8.37 8.37H19V7zM1 10v2c4.97 0 9 4.03 9 9h2c0-6.08-4.93-11-11-11zm20-7H3C1.9 3 1 3.9 1 5v3h2V5h18v14h-7v2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" fill="currentColor"/></svg>';
-  btn.style.display = 'inline-flex';
-  btn.style.alignItems = 'center';
-  btn.style.justifyContent = 'center';
-  btn.style.background = 'none';
-  btn.style.border = 'none';
-  btn.style.cursor = 'pointer';
-  btn.style.color = '#fff';
-  btn.style.fontSize = '1.2em';
-  btn.style.marginLeft = '8px';
-  btn.style.transition = 'color 0.2s';
   bar.appendChild(btn);
 
   // Estado visual
@@ -121,9 +117,7 @@ function initShakaPlayer() {
   }
 
   // Inyectar botón Cast universal SIEMPRE visible
-  setTimeout(function() {
-    addUniversalCastButton(player, video, container, manifestUri);
-  }, 1000);
+  addUniversalCastButton(player, video, container, manifestUri, 0);
 
   // Diagnóstico Cast (opcional)
   setTimeout(function() {

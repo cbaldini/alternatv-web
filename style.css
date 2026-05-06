@@ -791,8 +791,8 @@ body.nav-open {
   opacity: 1;
 }
 
-.universal-cast-btn {
-  display: inline-flex;
+.shaka-control-bar .universal-cast-btn {
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
   width: 2.8em;
@@ -803,15 +803,16 @@ body.nav-open {
   font-size: 1.2em;
   margin-left: 8px;
   cursor: pointer;
-  opacity: 0.85;
+  opacity: 0.95;
   transition: color 0.2s, opacity 0.2s;
+  z-index: 10;
 }
-.universal-cast-btn:hover {
+.shaka-control-bar .universal-cast-btn:hover {
   opacity: 1;
   color: #4fc3f7;
 }
-.universal-cast-btn[aria-pressed="true"],
-.universal-cast-btn.active {
+.shaka-control-bar .universal-cast-btn[aria-pressed="true"],
+.shaka-control-bar .universal-cast-btn.active {
   color: #4fc3f7;
   opacity: 1;
 }
