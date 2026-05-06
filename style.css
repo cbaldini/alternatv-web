@@ -289,6 +289,24 @@ google-cast-launcher {
   --disconnected-color: #fff;
 }
 
+/* Botón manual de Cast para mobile (Remote Playback API) */
+.cast-btn-manual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.cast-btn-manual:hover {
+  opacity: 1;
+}
+
 /* Mantener video 16:9 responsive */
 .player-shell .video-js {
   width: 100% !important;

@@ -129,7 +129,54 @@
       }
     }
 
-    // ── Chromecast (Cast Framework API v3 nativa) ───────────────────────────
+    // ── Remote Playback API (Chrome Mobile / Android) ──────────────────────
+    // En mobile, google-cast-launcher no funciona. Usamos la Remote Playback API
+    // que Chrome Mobile sí soporta y muestra el diálogo de selección de dispositivos.
+    (function () {
+      var videoEl = document.getElementById('alternatv');
+      var btn = document.getElementById('cast-btn-manual');
+      if (!videoEl || !btn) return;
+
+      // Verificar soporte de Remote Playback API
+      if (
+        typeof videoEl.remote !== 'undefined' &&
+        typeof videoEl.remote.watchAvailability === 'function'
+      ) {
+        // Mostrar el botón solo cuando hay dispositivos disponibles
+        videoEl.remote.watchAvailability(function (available) {
+          btn.style.display = available ? 'inline-flex' : 'none';
+          console.log('[RemotePlayback] Dispositivos disponibles:', available);
+        }).catch(function () {
+          // watchAvailability no disponible en este contexto (ej. HTTP sin HTTPS)
+          // Mostramos el botón igual para que el usuario pueda intentarlo
+          btn.style.display = 'inline-flex';
+        });
+
+        btn.addEventListener('click', function () {
+          videoEl.remote.prompt()
+            .then(function () {
+              console.log('[RemotePlayback] Conectado al dispositivo remoto');
+            })
+            .catch(function (err) {
+              console.warn('[RemotePlayback] Cancelado o error:', err);
+            });
+        });
+
+        // Sincronizar estado del player local con el dispositivo remoto
+        videoEl.remote.addEventListener('connecting', function () {
+          console.log('[RemotePlayback] Conectando...');
+        });
+        videoEl.remote.addEventListener('connect', function () {
+          console.log('[RemotePlayback] Reproduciendo en dispositivo remoto');
+        });
+        videoEl.remote.addEventListener('disconnect', function () {
+          console.log('[RemotePlayback] Desconectado — reanudando local');
+          if (vjsPlayer) vjsPlayer.play();
+        });
+      }
+    })();
+
+    // ── Chromecast Desktop (Cast Framework API v3 nativa) ──────────────────
     window.__castReady = function (isAvailable) {
       if (!isAvailable) return;
       console.log('[Cast] Framework listo');
