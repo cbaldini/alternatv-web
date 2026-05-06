@@ -98,10 +98,48 @@
     // Autoplay live (solo si existe el player)
     if (window.videojs && document.getElementById('alternatv')) {
       try {
-        var options = { autoplay: true, muted: false };
+        // Registrar el plugin de Chromecast si está disponible
+        if (window.videojsChromecast) {
+          window.videojsChromecast(window.videojs);
+        }
+
+        var castOptions = {
+          // Default Media Receiver (no requiere registro propio)
+          // Para usar un receiver personalizado, reemplazar por tu App ID
+          receiverAppID: 'CC1AD845'
+        };
+
+        var options = {
+          autoplay: true,
+          muted: false,
+          techOrder: ['chromecast', 'html5'],
+          plugins: {
+            chromecast: castOptions
+          },
+          controlBar: {
+            children: [
+              'playToggle',
+              'volumePanel',
+              'currentTimeDisplay',
+              'timeDivider',
+              'durationDisplay',
+              'progressControl',
+              'liveDisplay',
+              'customControlSpacer',
+              'chromecastButton',
+              'fullscreenToggle'
+            ]
+          }
+        };
+
         var player = window.videojs('alternatv', options);
         var playPromise = player.play();
         if (playPromise && playPromise.catch) playPromise.catch(function () {});
+
+        // Exponer para que __onGCastApiAvailable pueda re-inicializar si llega tarde
+        window.__castReady = function () {
+          // El SDK ya está cargado, el plugin lo detecta automáticamente
+        };
       } catch (e) {
         // noop
       }
