@@ -1,5 +1,20 @@
 // Inicialización de Shaka Player con soporte Chromecast y controles pro
 
+function showCastStatus(msg, color) {
+  var container = document.getElementById('shaka-player-container');
+  var diag = document.getElementById('cast-diagnose-msg');
+  if (!diag) {
+    diag = document.createElement('div');
+    diag.id = 'cast-diagnose-msg';
+    diag.style.margin = '8px 0 0 0';
+    diag.style.fontSize = '15px';
+    diag.style.textAlign = 'center';
+    diag.style.color = color || '#fff';
+    container.parentNode.appendChild(diag);
+  }
+  diag.textContent = msg;
+}
+
 function initShakaPlayer() {
   if (!window.shaka) {
     alert('No se pudo cargar el reproductor de video.');
@@ -24,8 +39,9 @@ function initShakaPlayer() {
   player.attach(video);
 
   // Solo una instancia de UI Overlay
+  var ui;
   if (!container.classList.contains('shaka-initialized')) {
-    var ui = new shaka.ui.Overlay(player, container, video);
+    ui = new shaka.ui.Overlay(player, container, video);
     container.classList.add('shaka-initialized');
     ui.configure({
       addBigPlayButton: true,
@@ -40,7 +56,19 @@ function initShakaPlayer() {
         played: '#d20000'
       }
     });
+  } else {
+    ui = container.querySelector('.shaka-controls-container');
   }
+
+  // Diagnóstico Cast: esperar a que la UI esté lista
+  setTimeout(function() {
+    var castBtn = container.querySelector('.shaka-cast-button');
+    if (castBtn && castBtn.offsetParent !== null) {
+      showCastStatus('✅ Dispositivo Chromecast disponible. El botón de Cast está visible.', '#4fc3f7');
+    } else {
+      showCastStatus('ℹ️ No se detectaron dispositivos Chromecast en la red. El botón aparecerá automáticamente si hay dispositivos disponibles.', '#ffb300');
+    }
+  }, 2000);
 
   // Cargar el stream
   player.load(manifestUri).then(function() {
