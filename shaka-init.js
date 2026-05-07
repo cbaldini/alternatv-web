@@ -122,11 +122,33 @@ function injectFloatingCastButton(streamUrl) {
   });
 }
 
+function isCastSupportedBrowser() {
+  var ua = navigator.userAgent;
+  // Chrome, Chromium, Edge (no Safari, no Firefox)
+  return /Chrome\//.test(ua) && !/EdgA|OPR|YaBrowser|SamsungBrowser|CriOS|FxiOS|Version\/.*Safari/.test(ua);
+}
+
 function setCastButtonVisibility(visible) {
+  // Si el navegador no es compatible, nunca mostrar el botón
+  if (!isCastSupportedBrowser()) visible = false;
   var btn = document.getElementById('floating-cast-btn');
   if (btn) btn.style.display = visible ? 'flex' : 'none';
   var barBtn = document.querySelector('.universal-cast-btn');
   if (barBtn) barBtn.style.display = visible ? 'inline-flex' : 'none';
+}
+
+// Ocultar Cast si los controles están ocultos
+function syncCastWithControls() {
+  var container = document.getElementById('shaka-player-container');
+  var controls = container && container.querySelector('.shaka-controls-container');
+  if (!controls) return;
+  var visible = !controls.classList.contains('shaka-hidden');
+  // Solo mostrar Cast si hay dispositivos y los controles están visibles
+  if (window.__castDevicesAvailable) {
+    setCastButtonVisibility(visible);
+  } else {
+    setCastButtonVisibility(false);
+  }
 }
 
 // Escuchar cambios de disponibilidad de dispositivos Cast
@@ -135,13 +157,25 @@ function monitorCastAvailability() {
     var ctx = cast.framework.CastContext.getInstance();
     function update() {
       var state = ctx.getCastState();
-      setCastButtonVisibility(state === cast.framework.CastState.NOT_CONNECTED || state === cast.framework.CastState.CONNECTING || state === cast.framework.CastState.CONNECTED);
+      var available = (state === cast.framework.CastState.NOT_CONNECTED || state === cast.framework.CastState.CONNECTING || state === cast.framework.CastState.CONNECTED);
+      window.__castDevicesAvailable = available;
+      syncCastWithControls();
     }
     ctx.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, update);
     update();
   } else {
+    window.__castDevicesAvailable = false;
     setCastButtonVisibility(false);
   }
+}
+
+// Hook para visibilidad de controles
+function monitorControlsVisibility() {
+  var container = document.getElementById('shaka-player-container');
+  var controls = container && container.querySelector('.shaka-controls-container');
+  if (!controls) return;
+  var observer = new MutationObserver(syncCastWithControls);
+  observer.observe(controls, { attributes: true, attributeFilter: ['class'] });
 }
 
 function initShakaPlayer() {
@@ -197,6 +231,8 @@ function initShakaPlayer() {
 
   // Monitor de disponibilidad de dispositivos Cast
   setTimeout(monitorCastAvailability, 1200);
+  // Monitor de visibilidad de controles
+  setTimeout(monitorControlsVisibility, 1500);
 
   // Diagnóstico Cast (opcional)
   setTimeout(function() {
