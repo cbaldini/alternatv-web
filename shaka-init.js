@@ -136,43 +136,40 @@ function setCastButtonVisibility(visible) {
   if (btn) btn.style.display = visible ? 'flex' : 'none';
   if (barBtn) barBtn.style.display = visible ? 'inline-flex' : 'none';
 
-  // Diagnóstico visual
-  var diag = document.getElementById('cast-visibility-diagnose');
-  if (!diag) {
-    diag = document.createElement('div');
-    diag.id = 'cast-visibility-diagnose';
-    diag.style.position = 'absolute';
-    diag.style.top = '8px';
-    diag.style.left = '8px';
-    diag.style.background = 'rgba(0,0,0,0.7)';
-    diag.style.color = '#fff';
-    diag.style.fontSize = '13px';
-    diag.style.padding = '4px 10px';
-    diag.style.borderRadius = '8px';
-    diag.style.zIndex = '9999';
-    diag.style.pointerEvents = 'none';
-    var container = document.getElementById('shaka-player-container');
-    if (container) container.appendChild(diag);
+  // Diagnóstico visual fuera del player
+  var legend = document.getElementById('cast-legend-diagnose');
+  if (!legend) {
+    // Insertar después de 'live-sub'
+    var liveSub = document.querySelector('.live-sub');
+    if (liveSub && !document.getElementById('cast-legend-diagnose')) {
+      legend = document.createElement('div');
+      legend.id = 'cast-legend-diagnose';
+      legend.style.margin = '8px 0 0 0';
+      legend.style.fontSize = '13px';
+      legend.style.color = '#fff';
+      legend.style.background = 'rgba(0,0,0,0.65)';
+      legend.style.borderRadius = '8px';
+      legend.style.padding = '4px 10px';
+      legend.style.display = 'none';
+      liveSub.parentNode.insertBefore(legend, liveSub.nextSibling);
+    }
   }
   // Ocultar la leyenda si los controles están ocultos
   var container = document.getElementById('shaka-player-container');
   var controls = container && container.querySelector('.shaka-controls-container');
   var controlsVisible = controls && !controls.classList.contains('shaka-hidden');
   if (!controlsVisible) {
-    diag.style.display = 'none';
+    if (legend) legend.style.display = 'none';
   } else if (!visible) {
     if (!isCastSupportedBrowser()) {
-      diag.textContent = 'Cast oculto: navegador no compatible';
-      diag.style.display = 'block';
+      if (legend) { legend.textContent = 'Cast oculto: navegador no compatible'; legend.style.display = 'block'; }
     } else if (!window.__castDevicesAvailable) {
-      diag.textContent = 'Cast oculto: no hay dispositivos';
-      diag.style.display = 'block';
+      if (legend) { legend.textContent = 'Cast oculto: no hay dispositivos'; legend.style.display = 'block'; }
     } else {
-      diag.textContent = 'Cast oculto: controles ocultos';
-      diag.style.display = 'block';
+      if (legend) { legend.textContent = 'Cast oculto: controles ocultos'; legend.style.display = 'block'; }
     }
   } else {
-    diag.style.display = 'none';
+    if (legend) legend.style.display = 'none';
   }
 }
 
