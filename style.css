@@ -843,7 +843,4 @@ body.nav-open {
   color: #4fc3f7;
 }
 
-.shaka-controls-container.shaka-hidden ~ #floating-cast-btn,
-#shaka-player-container .shaka-controls-container.shaka-hidden ~ #floating-cast-btn {
-  display: none !important;
-}
+/* REVERTIDO: No ocultar el botón flotante de Chromecast junto con los controles */
