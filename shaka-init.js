@@ -158,7 +158,9 @@ function setCastButtonVisibility(visible) {
   var container = document.getElementById('shaka-player-container');
   var controls = container && container.querySelector('.shaka-controls-container');
   var controlsVisible = controls && !controls.classList.contains('shaka-hidden');
-  if (!visible && controlsVisible) {
+  if (!controlsVisible) {
+    diag.style.display = 'none';
+  } else if (!visible) {
     if (!isCastSupportedBrowser()) {
       diag.textContent = 'Cast oculto: navegador no compatible';
       diag.style.display = 'block';
