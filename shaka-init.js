@@ -132,9 +132,42 @@ function setCastButtonVisibility(visible) {
   // Si el navegador no es compatible, nunca mostrar el botón
   if (!isCastSupportedBrowser()) visible = false;
   var btn = document.getElementById('floating-cast-btn');
-  if (btn) btn.style.display = visible ? 'flex' : 'none';
   var barBtn = document.querySelector('.universal-cast-btn');
+  if (btn) btn.style.display = visible ? 'flex' : 'none';
   if (barBtn) barBtn.style.display = visible ? 'inline-flex' : 'none';
+
+  // Diagnóstico visual
+  var diag = document.getElementById('cast-visibility-diagnose');
+  if (!diag) {
+    diag = document.createElement('div');
+    diag.id = 'cast-visibility-diagnose';
+    diag.style.position = 'absolute';
+    diag.style.top = '8px';
+    diag.style.left = '8px';
+    diag.style.background = 'rgba(0,0,0,0.7)';
+    diag.style.color = '#fff';
+    diag.style.fontSize = '13px';
+    diag.style.padding = '4px 10px';
+    diag.style.borderRadius = '8px';
+    diag.style.zIndex = '9999';
+    diag.style.pointerEvents = 'none';
+    var container = document.getElementById('shaka-player-container');
+    if (container) container.appendChild(diag);
+  }
+  if (!visible) {
+    if (!isCastSupportedBrowser()) {
+      diag.textContent = 'Cast oculto: navegador no compatible';
+      diag.style.display = 'block';
+    } else if (!window.__castDevicesAvailable) {
+      diag.textContent = 'Cast oculto: no hay dispositivos';
+      diag.style.display = 'block';
+    } else {
+      diag.textContent = 'Cast oculto: controles ocultos';
+      diag.style.display = 'block';
+    }
+  } else {
+    diag.style.display = 'none';
+  }
 }
 
 // Ocultar Cast si los controles están ocultos
