@@ -842,3 +842,8 @@ body.nav-open {
   background: #222;
   color: #4fc3f7;
 }
+
+.shaka-controls-container.shaka-hidden ~ #floating-cast-btn,
+#shaka-player-container .shaka-hidden ~ #floating-cast-btn {
+  display: none !important;
+}
