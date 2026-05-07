@@ -122,12 +122,34 @@ function injectFloatingCastButton(streamUrl) {
   });
 }
 
+function setCastButtonVisibility(visible) {
+  var btn = document.getElementById('floating-cast-btn');
+  if (btn) btn.style.display = visible ? 'flex' : 'none';
+  var barBtn = document.querySelector('.universal-cast-btn');
+  if (barBtn) barBtn.style.display = visible ? 'inline-flex' : 'none';
+}
+
+// Escuchar cambios de disponibilidad de dispositivos Cast
+function monitorCastAvailability() {
+  if (window.cast && window.cast.framework) {
+    var ctx = cast.framework.CastContext.getInstance();
+    function update() {
+      var state = ctx.getCastState();
+      setCastButtonVisibility(state === cast.framework.CastState.NOT_CONNECTED || state === cast.framework.CastState.CONNECTING || state === cast.framework.CastState.CONNECTED);
+    }
+    ctx.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, update);
+    update();
+  } else {
+    setCastButtonVisibility(false);
+  }
+}
+
 function initShakaPlayer() {
   if (!window.shaka) {
     alert('No se pudo cargar el reproductor de video.');
     return;
   }
-  // Usar URL absoluta para el manifest HLS
+  // Usar URL absoluta para el manifest HLS en el directorio superior
   var manifestUri = '/stream/hls/live.m3u8';
   var video = document.getElementById('shaka-player');
   var container = document.getElementById('shaka-player-container');
@@ -172,6 +194,9 @@ function initShakaPlayer() {
 
   // Inyectar botón Cast flotante arriba a la derecha del reproductor
   injectFloatingCastButton(manifestUri);
+
+  // Monitor de disponibilidad de dispositivos Cast
+  setTimeout(monitorCastAvailability, 1200);
 
   // Diagnóstico Cast (opcional)
   setTimeout(function() {
