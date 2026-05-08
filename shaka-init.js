@@ -35,6 +35,8 @@ function addUniversalCastButton(player, video, container, streamUrl, retries) {
   // Estado visual
   function setActive(active) {
     btn.style.color = active ? '#4fc3f7' : '#fff';
+    if (active) btn.classList.add('cast-active');
+    else btn.classList.remove('cast-active');
   }
 
   // Click: abrir diálogo Cast y enviar stream
@@ -44,18 +46,23 @@ function addUniversalCastButton(player, video, container, streamUrl, retries) {
       ctx.requestSession().then(function () {
         var session = ctx.getCurrentSession();
         if (!session) return;
-        var mediaInfo = new chrome.cast.media.MediaInfo(streamUrl, 'application/x-mpegURL');
+        var mediaInfo = new chrome.cast.media.MediaInfo(streamUrl, 'application/vnd.apple.mpegurl');
         mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
         var meta = new chrome.cast.media.GenericMediaMetadata();
         meta.title = 'AlternaTV · En vivo';
-        meta.images = [{ url: 'https://tv.alterna.ar/logoalternatv.png' }];
+        meta.images = [{ url: location.origin + '/logoalternatv.png' }];
         mediaInfo.metadata = meta;
         var req = new chrome.cast.media.LoadRequest(mediaInfo);
         req.autoplay = true;
         session.loadMedia(req).then(function () {
           setActive(true);
           if (player) player.pause && player.pause();
+        }).catch(function(err){
+          console.error('Cast: error loading media on session:', err);
+          showCastStatus('Error al iniciar reproducción en el tele: ' + (err && err.message ? err.message : String(err)), '#ffb3b3');
         });
+      }).catch(function(e){
+        console.warn('Cast: requestSession failed', e);
       });
     } else {
       alert('No se detectó el SDK de Google Cast. Usá Chrome o Chromium.');
@@ -77,26 +84,11 @@ function injectFloatingCastButton(streamUrl) {
   if (!container || document.getElementById('floating-cast-btn')) return;
   var btn = document.createElement('button');
   btn.id = 'floating-cast-btn';
+  btn.className = 'floating-cast-btn';
   btn.title = 'Enviar a TV (Chromecast)';
   btn.setAttribute('aria-label', 'Enviar a TV (Chromecast)');
   btn.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm18-7H5v1.63c3.96 1.28 7.09 4.41 8.37 8.37H19V7zM1 10v2c4.97 0 9 4.03 9 9h2c0-6.08-4.93-11-11-11zm20-7H3C1.9 3 1 3.9 1 5v3h2V5h18v14h-7v2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" fill="currentColor"/></svg>';
-  btn.style.position = 'absolute';
-  btn.style.top = '12px';
-  btn.style.right = '12px';
-  btn.style.zIndex = '100';
-  btn.style.background = 'rgba(0,0,0,0.7)';
-  btn.style.border = 'none';
-  btn.style.borderRadius = '50%';
-  btn.style.width = '44px';
-  btn.style.height = '44px';
-  btn.style.display = 'flex';
-  btn.style.alignItems = 'center';
-  btn.style.justifyContent = 'center';
-  btn.style.color = '#fff';
-  btn.style.cursor = 'pointer';
-  btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.4)';
-  btn.style.opacity = '0.95';
-  btn.style.transition = 'color 0.2s, opacity 0.2s';
+  // El posicionamiento y estilos están en CSS (style.css)
   container.style.position = 'relative';
   container.appendChild(btn);
 
@@ -106,15 +98,22 @@ function injectFloatingCastButton(streamUrl) {
       ctx.requestSession().then(function () {
         var session = ctx.getCurrentSession();
         if (!session) return;
-        var mediaInfo = new chrome.cast.media.MediaInfo(streamUrl, 'application/x-mpegURL');
+        var mediaInfo = new chrome.cast.media.MediaInfo(streamUrl, 'application/vnd.apple.mpegurl');
         mediaInfo.streamType = chrome.cast.media.StreamType.LIVE;
         var meta = new chrome.cast.media.GenericMediaMetadata();
         meta.title = 'AlternaTV · En vivo';
-        meta.images = [{ url: 'https://tv.alterna.ar/logoalternatv.png' }];
+        meta.images = [{ url: location.origin + '/logoalternatv.png' }];
         mediaInfo.metadata = meta;
         var req = new chrome.cast.media.LoadRequest(mediaInfo);
         req.autoplay = true;
-        session.loadMedia(req);
+        session.loadMedia(req).then(function(){
+          // ok
+        }).catch(function(err){
+          console.error('Cast floating btn error loading media:', err);
+          showCastStatus('Error en reproducción remota: ' + (err && err.message ? err.message : String(err)), '#ffb3b3');
+        });
+      }).catch(function(e){
+        console.warn('Cast: requestSession failed', e);
       });
     } else {
       alert('No se detectó el SDK de Google Cast. Usá Chrome o Chromium.');
@@ -193,7 +192,8 @@ function monitorCastAvailability() {
     var ctx = cast.framework.CastContext.getInstance();
     function update() {
       var state = ctx.getCastState();
-      var available = (state === cast.framework.CastState.NOT_CONNECTED || state === cast.framework.CastState.CONNECTING || state === cast.framework.CastState.CONNECTED);
+      // Devices available if state is not NO_DEVICES_AVAILABLE
+      var available = (state !== cast.framework.CastState.NO_DEVICES_AVAILABLE);
       window.__castDevicesAvailable = available;
       syncCastWithControls();
     }
@@ -220,7 +220,7 @@ function initShakaPlayer() {
     return;
   }
   // Usar URL absoluta para el manifest HLS en el directorio superior
-  var manifestUri = '/stream/hls/live.m3u8';
+  var manifestUri = location.origin + '/stream/hls/live.m3u8';
   var video = document.getElementById('shaka-player');
   var container = document.getElementById('shaka-player-container');
 
@@ -259,7 +259,7 @@ function initShakaPlayer() {
     ui = container.querySelector('.shaka-controls-container');
   }
 
-  // Inyectar botón Cast universal SIEMPRE visible
+  // Inyectar botón Cast universal SIEMPRE visible (pero su visibilidad real depende de availability)
   addUniversalCastButton(player, video, container, manifestUri, 0);
 
   // Inyectar botón Cast flotante arriba a la derecha del reproductor
@@ -283,7 +283,7 @@ function initShakaPlayer() {
     video.style.background = 'black';
   }).catch(function(error) {
     video.style.background = '#300';
-    alert('No se pudo cargar el stream en vivo.\n\nVerificá tu conexión o intentá más tarde.');
+    showCastStatus('No se pudo cargar el stream localmente. Verificá el servidor y CORS.');
     console.error('Error cargando el stream:', error);
   });
 }
